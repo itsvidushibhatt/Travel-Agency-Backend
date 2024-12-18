@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: 'https://travel-agency-frontend-16.onrender.com/', // Replace with your actual frontend domain
+  origin: 'https://travel-agency-frontend-19.onrender.com/', // Replace with your actual frontend domain
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 };
 app.use(cors(corsOptions)); // Enable CORS with the options
