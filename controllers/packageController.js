@@ -1,5 +1,5 @@
 const TourPackage = require('../models/TourPackage');
-const pdf = require('html-pdf'); // For PDF generation
+const puppeteer = require('puppeteer'); // For PDF generation
 
 // Helper: Validate required fields for a Tour Package
 const validatePackageFields = ({ title, description, price, image, date, time }) => {
@@ -181,17 +181,22 @@ exports.generateInvoice = async (req, res) => {
         </html>
         `;
 
-        console.log('Generating PDF invoice...');
-        pdf.create(invoiceHtml).toStream((err, stream) => {
-            if (err) {
-                console.error('Error generating invoice:', err.message);
-                return res.status(500).json({ error: 'Failed to generate invoice' });
-            }
-
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', 'attachment; filename=invoice.pdf');
-            stream.pipe(res);
+        console.log('Launching Puppeteer...');
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'], // Essential for production environments
         });
+
+        const page = await browser.newPage();
+        await page.setContent(invoiceHtml, { waitUntil: 'load' });
+
+        console.log('Generating PDF...');
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+        await browser.close();
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=invoice.pdf');
+        res.send(pdfBuffer);
     } catch (error) {
         console.error('Error generating invoice:', error.message);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
